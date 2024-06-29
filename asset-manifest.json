@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/AppPhotos/static/css/main.e6c13ad2.css",
+    "main.js": "/AppPhotos/static/js/main.2bb6b8e1.js",
+    "static/js/453.d1f7a73d.chunk.js": "/AppPhotos/static/js/453.d1f7a73d.chunk.js",
+    "index.html": "/AppPhotos/index.html",
+    "main.e6c13ad2.css.map": "/AppPhotos/static/css/main.e6c13ad2.css.map",
+    "main.2bb6b8e1.js.map": "/AppPhotos/static/js/main.2bb6b8e1.js.map",
+    "453.d1f7a73d.chunk.js.map": "/AppPhotos/static/js/453.d1f7a73d.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.2bb6b8e1.js"
+  ]
+}
