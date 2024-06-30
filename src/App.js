@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -23,12 +23,10 @@ import {
   useDisclosure,
   HStack,
 } from '@chakra-ui/react';
-import { gapi } from 'gapi-script';
 
-const CLIENT_ID = '961171182933-qvm6ko3ahn46bi8hbdhin3r45el7t2ii.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-const FOLDER_ID = '1x2eQgJuzrl5Gmatw0eJM30vhUtibLn_p'; // Reemplaza con tu carpeta
-const AUDIO_SRC = './marcha-nupcial.mp3'; // Reemplaza con la ruta a tu archivo de audio
+const API_KEY = 'AIzaSyCzUo5k4VAESPbg6fMexdpHdY9CTSMpFcE';
+const FOLDER_ID = '1SqKQVyN-Qv9Sftp2OXOIVe9j_oEdRdwT'; // Reemplaza con tu carpeta
+const AUDIO_SRC = 'marcha-nupcial.mp3'; // Reemplaza con la ruta a tu archivo de audio
 
 function App() {
   const fileInputRef = useRef();
@@ -36,33 +34,9 @@ function App() {
   const [selectedImage, setSelectedImage] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  useEffect(() => {
-    const initClient = () => {
-      gapi.client.init({
-        clientId: CLIENT_ID,
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-        scope: SCOPES,
-      }).then(() => {
-        gapi.auth2.getAuthInstance().signIn().catch(error => {
-          console.error('Error signing in', error);
-        });
-      });
-    };
-
-    gapi.load('client:auth2', initClient);
-  }, []);
-
-  const handleAuthClick = () => {
-    gapi.auth2.getAuthInstance().signIn().catch(error => {
-      console.error('Error signing in', error);
-    });
-  };
-
   const handleFileUpload = () => {
     const files = fileInputRef.current.files;
     if (files.length > 0) {
-      const accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-
       Array.from(files).forEach(file => {
         const metadata = {
           name: file.name,
@@ -73,9 +47,8 @@ function App() {
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
         form.append('file', file);
 
-        fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${API_KEY}`, {
           method: 'POST',
-          headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
           body: form,
         })
           .then((response) => response.json())
@@ -93,27 +66,24 @@ function App() {
   };
 
   const fetchFiles = () => {
-    const accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-    gapi.client.drive.files.list({
-      q: `'${FOLDER_ID}' in parents`,
-      fields: 'files(id, name, mimeType)',
-    }).then(async (response) => {
-      const files = response.result.files;
-      const fileBlobs = await Promise.all(files.map(async (file) => {
-        const blob = await fetchFileBlob(file.id, accessToken);
-        return { ...file, blobUrl: URL.createObjectURL(blob) };
-      }));
-      setFiles(fileBlobs);
-    }).catch((error) => {
-      console.error('Error fetching files', error);
-      alert('Error al obtener los archivos');
-    });
+    fetch(`https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents&key=${API_KEY}`)
+      .then((response) => response.json())
+      .then(async (data) => {
+        const files = data.files;
+        const fileBlobs = await Promise.all(files.map(async (file) => {
+          const blob = await fetchFileBlob(file.id);
+          return { ...file, blobUrl: URL.createObjectURL(blob) };
+        }));
+        setFiles(fileBlobs);
+      })
+      .catch((error) => {
+        console.error('Error fetching files', error);
+        alert('Error al obtener los archivos');
+      });
   };
 
-  const fetchFileBlob = async (fileId, accessToken) => {
-    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-      headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-    });
+  const fetchFileBlob = async (fileId) => {
+    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${API_KEY}`);
     return response.blob();
   };
 
@@ -125,8 +95,9 @@ function App() {
   return (
     <Container centerContent>
       <HStack border="3px solid blue" w="100%" h="30px">
-      <audio border="3px solid blue" src={AUDIO_SRC} autoPlay loop />
-      </HStack>
+  <audio id="background-audio"src={AUDIO_SRC} loop><source src={AUDIO_SRC}></source></audio> 
+  <Button onClick={() => document.getElementById('background-audio').play()}>Reproducir Música</Button>
+</HStack>
       <Box padding="4" bg="gray.100" maxW="3xl" borderRadius="md">
         <Tabs isFitted variant="enclosed">
           <TabList mb="1em">
@@ -138,7 +109,6 @@ function App() {
               <VStack spacing={4}>
                 <Heading as="h1" size="xl">Sube tus Fotos de la Boda</Heading>
                 <Input type="file" ref={fileInputRef} multiple />
-                <Button colorScheme="blue" onClick={handleAuthClick}>Iniciar Sesión en Google</Button>
                 <Button colorScheme="blue" onClick={handleFileUpload}>Subir</Button>
               </VStack>
             </TabPanel>
