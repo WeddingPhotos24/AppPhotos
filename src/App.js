@@ -172,14 +172,15 @@ function App() {
 
   return (
     <Container centerContent         padding="4"
-    bg="gray.100"
-    w="3xl"
+ 
+    w="1800px"
     
     borderRadius="md"
-    backgroundImage="url('fondo-rym1.jpg')" // Usar la URL correcta
+    backgroundImage="https://i.ibb.co/gzLMG5X/rym.jpg" 
     backgroundSize="cover"
     backgroundRepeat={'no-repeat'}
-    backgroundPosition="top"
+    
+    
   >
       
       <Box
@@ -189,7 +190,7 @@ function App() {
         mt="100px"
         h="100%"
         w="auto"
-        
+        backgroundImage="url('rym.jpg')" 
       >
         {!isSignedIn ? (
           <VStack spacing={4}>
@@ -207,7 +208,7 @@ function App() {
               <Button colorScheme="blue" onClick={handleFileUpload}>Subir</Button>
               <Button colorScheme="red" onClick={handleSignOutClick}>Cerrar Sesión</Button>
             </VStack>
-            {/* <Tabs isFitted variant="enclosed" mt={4}>
+            <Tabs isFitted variant="enclosed" mt={4}>
               <TabList mb="1em">
                 <Tab onClick={fetchFiles}>Ver Fotos</Tab>
               </TabList>
@@ -234,7 +235,7 @@ function App() {
                   </SimpleGrid>
                 </TabPanel>
               </TabPanels>
-            </Tabs> */}
+            </Tabs>
           </>
         )}
       </Box>
