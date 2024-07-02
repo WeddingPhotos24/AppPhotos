@@ -22,6 +22,11 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerOverlay,
+  DrawerCloseButton,
   useDisclosure,
   SimpleGrid,
   Text,
@@ -171,16 +176,18 @@ function App() {
 
 
   return (
-    <Container centerContent         padding="4"
- 
-    w="1800px"
-    
+    <Container 
+    position={"center"} 
+    centerContent   
+    padding="4"
+    w={{ base: "full", md: "3xl" }}  
+    h={{ base:"full",md: "100%"}}
+    minH="100vh"
     borderRadius="md"
     backgroundImage="https://i.ibb.co/gzLMG5X/rym.jpg" 
-    backgroundSize="cover"
+    backgroundSize= {{base :"contain", md: "contain"}}
     backgroundRepeat={'no-repeat'}
-    
-    
+       
   >
       
       <Box
@@ -216,7 +223,7 @@ function App() {
                 <TabPanel>
                 <SimpleGrid columns={[1, null, 3]} spacing="40px" mt={4}>
                     {files.map(file => (
-                      <Box key={file.id} position="relative" overflow="hidden">
+                      <Box border="1px solid black" w="100px" h="100px" key={file.id} position="relative" overflow="hidden" alignContent={"center"}>
                         <Image src={file.blobUrl} alt={file.name} onClick={() => handleImageClick(file.blobUrl)} cursor="pointer" />
                         <IconButton
                           icon={<DeleteIcon />}
@@ -240,21 +247,25 @@ function App() {
         )}
       </Box>
 
-      <Modal  w="3x1" isOpen={isOpen} onClose={onClose} size="xl">
+      <Modal isOpen={isOpen} onClose={onClose} size="full">
         <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Imagen</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            {selectedImage && <Image src={selectedImage} alt="Selected" />}
+        <ModalContent
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          bg="rgba(0, 0, 0, .7) "
+          boxShadow="none"
+          animation="scaleUp 0.3s ease-in-out"
+        >
+          <ModalCloseButton color="white" bg="black"/>
+          <ModalBody display="flex" justifyContent="center" alignItems="center">
+            {selectedImage && (
+              <Image src={selectedImage} alt="Selected" maxW="100vw" maxH="100vh" />
+            )}
           </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={onClose}>
-              Cerrar
-            </Button>
-          </ModalFooter>
         </ModalContent>
       </Modal>
+
     </Container>
   );
 }
