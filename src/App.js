@@ -31,6 +31,8 @@ import {
   SimpleGrid,
   Text,
   useToast,
+  HStack,
+  Spinner,
 } from '@chakra-ui/react';
 import { gapi } from 'gapi-script';
 import "react-responsive-carousel/lib/styles/carousel.min.css"; 
@@ -47,10 +49,13 @@ function App() {
   const fileInputRef = useRef();
   const [files, setFiles] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [imageToDelete, setImageToDelete] = useState(null);
+  const [isFileSelected,setIsFileSelected] = useState(false)
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
-  const [currentTrack, setCurrentTrack] = useState(0);
+  const [isLoading, setIsLoading] = useState(true)
+ 
   const toast = useToast()
   useEffect(() => {
     const initClient = () => {
@@ -62,6 +67,7 @@ function App() {
         const authInstance = gapi.auth2.getAuthInstance();
         authInstance.isSignedIn.listen(updateSignInStatus);
         updateSignInStatus(authInstance.isSignedIn.get());
+        setIsLoading(false)
       });
     };
 
@@ -79,6 +85,10 @@ function App() {
     }
   };
 
+  const handleFileChange = (event) => {
+    setIsFileSelected(event.target.files.length > 0);
+  };
+  
   const handleAuthClick = () => {
     gapi.auth2.getAuthInstance().signIn().catch(error => {
       console.error('Error signing in', error);
@@ -115,12 +125,24 @@ function App() {
           .then((response) => response.json())
           .then((data) => {
             console.log(data);
-            toast("Subida")
+            toast({
+              title: 'Imagen subida',
+              status: 'success',
+              duration: 5000,
+              isClosable: true,
+            });
             fetchFiles(); // Actualiza la lista de archivos después de subir uno nuevo
+            setIsFileSelected(false); 
+            fileInputRef.current.value="";
           })
           .catch((error) => {
             console.error('Error uploading file', error);
-            alert('Error al subir el archivo');
+            toast({
+              title: 'Error al subir la imagen',
+              status: 'error',
+              duration: 5000,
+              isClosable: true,
+            });
           });
       });
     }
@@ -135,6 +157,7 @@ function App() {
       const files = response.result.files || [];
       const fileBlobs = await Promise.all(files.map(async (file) => {
         const blob = await fetchFileBlob(file.id, accessToken);
+        console.log(file.id)
         return { ...file, blobUrl: URL.createObjectURL(blob) };
       }));
       setFiles(fileBlobs);
@@ -151,8 +174,9 @@ function App() {
     return response.blob();
   };
 
-  const handleImageClick = (blobUrl) => {
+  const handleImageClick = (blobUrl,fileId) => {
     setSelectedImage(blobUrl);
+    setImageToDelete(fileId)
     onOpen();
   };
 
@@ -174,75 +198,109 @@ function App() {
   };
 
 
-
-  return (
-    <Container 
+  if(isLoading){
+    return <Container 
     position={"center"} 
     centerContent   
-    padding="4"
-    w={{ base: "full", md: "3xl" }}  
+   
+    w={{ base: "full", md: "100%" }}  
     h={{ base:"full",md: "100%"}}
     minH="100vh"
     borderRadius="md"
-    backgroundImage="https://i.ibb.co/gzLMG5X/rym.jpg" 
+    //backgroundImage="https://i.ibb.co/gzLMG5X/rym.jpg" 
+    backgroundSize= {{base :"contain", md: "contain"}}
+    backgroundRepeat={'no-repeat'}
+       
+  ><Spinner/></Container>
+    
+    
+  }
+  return (
+    
+    <Container 
+    position={"center"} 
+    centerContent   
+   
+    w={{ base: "full", md: "100%" }}  
+    h={{ base:"full",md: "100%"}}
+    minH="100vh"
+    borderRadius="md"
+    //backgroundImage="https://i.ibb.co/gzLMG5X/rym.jpg" 
     backgroundSize= {{base :"contain", md: "contain"}}
     backgroundRepeat={'no-repeat'}
        
   >
-      
-      <Box
+      <Image w="100%" h="100%" zIndex="-1" position="absolute" src="https://i.ibb.co/gzLMG5X/rym.jpg"></Image>
+      <Box 
         padding="4"
         bg="rgba(255, 255, 255, .7) "
         borderRadius="md"
-        mt="100px"
+        mt="110px"
         h="100%"
         w="auto"
-        backgroundImage="url('rym.jpg')" 
+       
       >
         {!isSignedIn ? (
           <VStack spacing={4}>
-            <Heading as="h1" size="xl">Inicia sesión para subir y ver fotos</Heading>
+            <Heading fontSize="20px" as="h1" size="xl">Inicia sesión para subir y ver fotos</Heading>
             <Button colorScheme="blue" onClick={handleAuthClick}>Iniciar Sesión en Google</Button>
           </VStack>
         ) : (
           <>
             <VStack spacing={4}>
-              <Heading as="h1" size="xl">Sube tus Fotos de la Boda</Heading>
-              {userProfile && (
-                <Text>Conectado como: {userProfile.getName()} ({userProfile.getEmail()})</Text>
-              )}
-              <Input type="file" ref={fileInputRef} multiple />
-              <Button colorScheme="blue" onClick={handleFileUpload}>Subir</Button>
-              <Button colorScheme="red" onClick={handleSignOutClick}>Cerrar Sesión</Button>
+              <Heading fontFamily="monospace" fontSize="20px" as="h1" size="xl">¡Recordemos este día juntos!</Heading>
+              
+              <Input type="file" ref={fileInputRef} multiple onChange={handleFileChange}/>
+              <Button bg="#8c9d50" color="white" disabled={isFileSelected} onClick={handleFileUpload}>Subir</Button>
+              
             </VStack>
             <Tabs isFitted variant="enclosed" mt={4}>
               <TabList mb="1em">
-                <Tab onClick={fetchFiles}>Ver Fotos</Tab>
+                <Tab  onClick={fetchFiles}>Ver Fotos</Tab>
               </TabList>
               <TabPanels>
                 <TabPanel>
-                <SimpleGrid columns={[1, null, 3]} spacing="40px" mt={4}>
-                    {files.map(file => (
-                      <Box border="1px solid black" w="100px" h="100px" key={file.id} position="relative" overflow="hidden" alignContent={"center"}>
-                        <Image src={file.blobUrl} alt={file.name} onClick={() => handleImageClick(file.blobUrl)} cursor="pointer" />
-                        <IconButton
-                          icon={<DeleteIcon />}
-                          colorScheme="red"
-                          onClick={() => handleFileDelete(file.id)}
-                          position="absolute"
-                          top="10px"
-                          right="10px"
-                          zIndex="2"
-                          opacity="0"
-                          _hover={{ opacity: 1 }}
-                          transition="opacity 0.2s"
-                        />
-                      </Box>
-                    ))}
-                  </SimpleGrid>
+                <Box
+                  
+                  maxW="320px" 
+                  height="auto"  // Tamaño fijo para el contenedor principal
+                  overflowX="auto" // Permite el desplazamiento horizontal
+                  whiteSpace="nowrap" // Mantiene las imágenes en una fila horizontal
+                  //border="1px solid black" // Borde para visualizar mejor el contenedor
+                >
+                  {files.map(file => (
+                    <Box
+                      mt={2}
+                      alignContent="center"
+                      display="inline-block"
+                      //border="1px solid black"
+                      width="100px"
+                      height="100px"
+                      key={file.id}
+                      position="relative"
+                      overflow="hidden"
+                      mr={2} // Margen derecho para separar las imágenes
+                    >
+                      <Image 
+                        
+                        src={file.blobUrl}
+                        alt={file.name}
+                        onClick={() => handleImageClick(file.blobUrl,file.id)}
+                        cursor="pointer"
+                      />
+                    </Box>
+                  ))}
+                </Box>
+
                 </TabPanel>
               </TabPanels>
             </Tabs>
+            <VStack>
+            {userProfile && (
+                <Text fontFamily="monospace">Conectado como: ({userProfile.getEmail()})</Text>
+              )}
+              <Button colorScheme="red" onClick={handleSignOutClick}>Cerrar Sesión</Button>
+          </VStack>
           </>
         )}
       </Box>
@@ -253,11 +311,24 @@ function App() {
           display="flex"
           justifyContent="center"
           alignItems="center"
-          bg="rgba(0, 0, 0, .7) "
+          bg="rgba(0, 0, 0, .7)"
           boxShadow="none"
           animation="scaleUp 0.3s ease-in-out"
         >
-          <ModalCloseButton color="white" bg="black"/>
+          
+          <IconButton
+            icon={<DeleteIcon />}
+            colorScheme="red"
+            onClick={() => handleFileDelete(imageToDelete)}
+            position="absolute"
+            top="10px"
+            left="10px" 
+            zIndex="2"
+            opacity="0"
+            _hover={{ opacity: 1 }}
+            transition="opacity 0.2s"
+          />
+          <ModalCloseButton color="white" bg="red" />
           <ModalBody display="flex" justifyContent="center" alignItems="center">
             {selectedImage && (
               <Image src={selectedImage} alt="Selected" maxW="100vw" maxH="100vh" />
@@ -265,6 +336,7 @@ function App() {
           </ModalBody>
         </ModalContent>
       </Modal>
+
 
     </Container>
   );
