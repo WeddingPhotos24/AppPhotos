@@ -18,10 +18,11 @@ import {
   Modal,
   ModalOverlay,
   ModalContent,
-  ModalHeader,
+  Divider,
   ModalFooter,
   ModalBody,
   ModalCloseButton,
+  ModalHeader,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -55,6 +56,8 @@ function App() {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
  
   const toast = useToast()
   useEffect(() => {
@@ -126,7 +129,7 @@ function App() {
           .then((data) => {
             console.log(data);
             toast({
-              title: 'Imagen subida',
+              title: 'Archivo subido',
               status: 'success',
               duration: 5000,
               isClosable: true,
@@ -138,7 +141,7 @@ function App() {
           .catch((error) => {
             console.error('Error uploading file', error);
             toast({
-              title: 'Error al subir la imagen',
+              title: 'Error al subir el archivo',
               status: 'error',
               duration: 5000,
               isClosable: true,
@@ -156,11 +159,11 @@ function App() {
     }).then(async (response) => {
       const files = response.result.files || [];
       const fileBlobs = await Promise.all(files.map(async (file) => {
-        const blob = await fetchFileBlob(file.id, accessToken);
-        console.log(file.id)
+        const blob = await fetchFileBlob(file.id, accessToken);        
         return { ...file, blobUrl: URL.createObjectURL(blob) };
       }));
       setFiles(fileBlobs);
+      console.log(files)
     }).catch((error) => {
       console.error('Error fetching files', error);
       alert('Error al obtener los archivos');
@@ -181,22 +184,36 @@ function App() {
   };
 
   const handleFileDelete = (fileId) => {
-    const accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-
-    fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+    const accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;    
+    fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {      
       method: 'DELETE',
       headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
     })
       .then(() => {
-        toast('Archivo eliminado con éxito');
+        toast({
+          title: 'Imagen eliminada',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
+        onClose();
         fetchFiles(); // Actualiza la lista de archivos después de eliminar uno
       })
       .catch((error) => {
         console.error('Error deleting file', error);
-        alert('Error al eliminar el archivo');
+        toast({
+          title: 'Error al borrar imágen',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
       });
   };
 
+  const confirmDelete = () => {
+    handleFileDelete(imageToDelete);
+    setIsConfirmOpen(false);
+  };
 
   if(isLoading){
     return <Container 
@@ -207,11 +224,10 @@ function App() {
     h={{ base:"full",md: "100%"}}
     minH="100vh"
     borderRadius="md"
-    //backgroundImage="https://i.ibb.co/gzLMG5X/rym.jpg" 
     backgroundSize= {{base :"contain", md: "contain"}}
     backgroundRepeat={'no-repeat'}
        
-  ><Spinner/></Container>
+  ><Spinner size="xl" position="absolute" top="50%" left="45%"/></Container>
     
     
   }
@@ -224,18 +240,17 @@ function App() {
     w={{ base: "full", md: "100%" }}  
     h={{ base:"full",md: "100%"}}
     minH="100vh"
-    borderRadius="md"
-    //backgroundImage="https://i.ibb.co/gzLMG5X/rym.jpg" 
+    borderRadius="md" 
     backgroundSize= {{base :"contain", md: "contain"}}
     backgroundRepeat={'no-repeat'}
        
   >
-      <Image w="100%" h="100%" zIndex="-1" position="absolute" src="https://i.ibb.co/gzLMG5X/rym.jpg"></Image>
+      <Image  w={{base:"100%",md:"30%"}} h="100%" zIndex="-1" position="absolute" src="https://i.ibb.co/gzLMG5X/rym.jpg"></Image>
       <Box 
         padding="4"
         bg="rgba(255, 255, 255, .7) "
         borderRadius="md"
-        mt="110px"
+        mt={{base:"110px",md:"160px"}}
         h="100%"
         w="auto"
        
@@ -248,29 +263,34 @@ function App() {
         ) : (
           <>
             <VStack spacing={4}>
-              <Heading fontFamily="monospace" fontSize="20px" as="h1" size="xl">¡Recordemos este día juntos!</Heading>
-              
-              <Input type="file" ref={fileInputRef} multiple onChange={handleFileChange}/>
-              <Button bg="#8c9d50" color="white" disabled={isFileSelected} onClick={handleFileUpload}>Subir</Button>
-              
+              <Heading fontFamily="monospace" fontSize="17px" as="h1" size="xl">¡Recordemos este día juntos!</Heading>             
+              <Input border="none" type="file" ref={fileInputRef} multiple onChange={handleFileChange}/>        
+              <Button w="125px" bg="#8c9d50" color="white" disabled={isFileSelected} onClick={handleFileUpload}>Subir</Button>                            
             </VStack>
             <Tabs isFitted variant="enclosed" mt={4}>
+              
               <TabList mb="1em">
-                <Tab  onClick={fetchFiles}>Ver Fotos</Tab>
+                <Tab  onClick={fetchFiles}>Tus fotos</Tab>
               </TabList>
               <TabPanels>
                 <TabPanel>
+                
                 <Box
-                  
+                  justifyContent="center"
                   maxW="320px" 
                   height="auto"  // Tamaño fijo para el contenedor principal
                   overflowX="auto" // Permite el desplazamiento horizontal
                   whiteSpace="nowrap" // Mantiene las imágenes en una fila horizontal
-                  //border="1px solid black" // Borde para visualizar mejor el contenedor
                 >
+                  {files.length === 0 && (
+                    <VStack justifyItems="center" mt="10px" mb="40px">
+                    <Text fontSize="12px" color="black">Aún no has subido ningún archivo</Text>
+                    </VStack>
+                  )}
+                  
                   {files.map(file => (
                     <Box
-                      mt={2}
+                      
                       alignContent="center"
                       display="inline-block"
                       //border="1px solid black"
@@ -280,7 +300,10 @@ function App() {
                       position="relative"
                       overflow="hidden"
                       mr={2} // Margen derecho para separar las imágenes
-                    >
+                    >                   
+                      
+                      
+                      
                       <Image 
                         
                         src={file.blobUrl}
@@ -289,6 +312,7 @@ function App() {
                         cursor="pointer"
                       />
                     </Box>
+                    
                   ))}
                 </Box>
 
@@ -323,10 +347,8 @@ function App() {
             position="absolute"
             top="10px"
             left="10px" 
-            zIndex="2"
-            opacity="0"
-            _hover={{ opacity: 1 }}
-            transition="opacity 0.2s"
+            zIndex="2"            
+            size="sm"
           />
           <ModalCloseButton color="white" bg="red" />
           <ModalBody display="flex" justifyContent="center" alignItems="center">
@@ -336,8 +358,6 @@ function App() {
           </ModalBody>
         </ModalContent>
       </Modal>
-
-
     </Container>
   );
 }
